@@ -1,0 +1,133 @@
+Here are the vector and loki config files being used in my wdw desktop, these two configs are working properly and the task is to implement them at home and instead of taking logs from nginx, change that to gather apache2 logs. 
+
+
+
+
+
+Vector
+
+
+
+
+
+#                                    __   __  __
+#                                    \ \ / / / /
+#                                     \ V / / /
+#                                      \_/  \/
+#
+#                                    V E C T O R
+#                                   Configuration
+#
+# ------------------------------------------------------------------------------
+# Website: https://vector.dev
+# Docs: https://vector.dev/docs
+# Chat: https://chat.vector.dev
+# ------------------------------------------------------------------------------
+
+# Change this to use a non-default directory for Vector data storage:
+# data_dir = "/var/lib/vector"
+
+# Random Syslog-formatted logs
+[sources.nginx]
+type = "file"
+include = ["/var/log/nginx/*.log"]
+# Parse Syslog logs
+# See the Vector Remap Language reference for more info: https://vrl.dev
+
+[sinks.out]
+type = "file"
+inputs = ["nginx"]
+path = "/home/delacuadra/vector-test.log"
+encoding.codec = "json"
+# Print parsed logs to stdout
+
+[sinks.loki-server]
+type = "loki"
+inputs = ["nginx"]
+endpoint = "http://192.168.1.163:3100"
+compression = "none"
+encoding.codec = "json"
+
+[sinks.loki-server.labels]
+forwarder = "vector"
+server = "erick-test"
+
+# Vector's GraphQL API (disabled by default)
+# Uncomment to try it out with the `vector top` command or
+# in your browser at http://localhost:8686
+#[api]
+#enabled = true
+#address = "127.0.0.1:8686"
+
+
+
+
+
+Loki
+
+
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  http_listen_address: 192.168.1.163
+ # grpc_listen_port: 9096
+ # grpc_listen_address: 192.168.1.163
+
+common:
+  path_prefix: /tmp/loki
+  storage:
+    filesystem:
+      chunks_directory: /tmp/loki/chunks
+      rules_directory: /tmp/loki/rules
+  replication_factor: 1
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+ruler:
+  alertmanager_url: http://localhost:9093
+
+# By default, Loki will send anonymous, but uniquely-identifiable usage and configuration
+# analytics to Grafana Labs. These statistics are sent to https://stats.grafana.org/
+#
+# Statistics help us better understand how Loki is used, and they show us performance
+# levels for most users. This helps us prioritize features and documentation.
+# For more information on what's sent, look at
+# https://github.com/grafana/loki/blob/main/pkg/usagestats/stats.go
+# Refer to the buildReport method to see what goes into a report.
+#
+# If you would like to disable reporting, uncomment the following lines:
+#analytics:
+#  reporting_enabled: false
+
+
+
+
+Grafana
+
+
+
+
+
+
+
+
+
+
+
+
+
+
